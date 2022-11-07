@@ -1,0 +1,4 @@
+Scotese_2021_GAT explanation
+
+Scotese_2021_GAT_default: default from SCION
+Scotese_2021_GAT: timestep 67, where the big -ve spike is, has been smoothed (to the average of the surrounding two time steps)

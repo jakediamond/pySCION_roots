@@ -8,6 +8,7 @@ import pandas as pd
 import scipy.io as sp
 from pathlib import Path
 from scipy.integrate import solve_ivp
+from scipy.interpolate import interp1d
 
 def intersect_mtlb(a, b):
     #same functionality as intersect in matlab
@@ -148,6 +149,22 @@ def SCION_initialise(S):
     arc_factor = 12#7#10
     suture_factor = 80#343
     relict_arc_factor = 12#7#10
+
+    #change in root depths
+    #root_times = np.asarray([-600, ,-410, -400, -350, 0])#default
+    root_times = np.asarray([-600, -410, -400, -350, 0])
+    #460 from Canadell et al. 1996 Oecologia, expressed as a fraction out of 1 (== present day)
+    #NBNB when root depths are 0, we imply in our weathering equation that cells that have a possible
+    #root presence (i.e. our maps) have 0 weathering, because we use them to mask out our 'raw' weathering
+    #need to find a way to separate these
+    #root_depths = np.asarray([0, 0, 10, 100, 460])/460 #default
+    #root_depths = np.asarray([0, 0, 10, 200, 460])/460
+    #root_depths = np.asarray([1, 1, 1, 1, 1])/1
+    root_depths = np.asarray([0, 0, 0, 0, 0])/1
+    print(root_depths)
+    #root_interp = interp1d(root_times, root_depths)
+    root_depth_factor = interp1d(root_times, root_depths)
+
     #if testing them
     if ARC_TEST == 1:
         arc_factor = 1
@@ -197,7 +214,10 @@ def SCION_initialise(S):
     #subtract sutures from relict arcs
     relict_arc = relict_arc-suture
     relict_arc = np.maximum(0, (relict_arc))
-
+    #### root depths
+    file_to_open_ROOTS = './forcings/root_presence.mat'
+    root_maps = sp.loadmat(file_to_open_ROOTS)
+    root_presence = root_maps['root_presence']
     #Maffre and West params, SCION default are greyed out
     Xm = 0.1
     K =  6.2e-5 #6e-5 | 3.8e-5
@@ -320,7 +340,7 @@ def SCION_initialise(S):
     INTERPSTACK = SCION_classes.Interpstack_class(CO2, interp_time, Tair, runoff,
                                                   land, lat, lon, topo, aire,
                                                   gridarea, suture, arc, relict_arc,
-                                                  slope)
+                                                  slope, root_presence)
 
 
     model_pars = SCION_classes.Model_parameters_class(
@@ -365,7 +385,7 @@ def SCION_initialise(S):
             k_gypdeg, k_capb, k_fepb, k_mopb, k_phosw, k_landfrac, k_nfix,
             k_denit, k_Sr_sedw, k_Sr_mantle, k_Sr_silw, k_Sr_metam, k_oxfrac,
             newp0, copsek16, a, b, kfire, P0, O0, A0, G0, C0, PYR0, GYP0, S0,
-            CAL0, N0, OSr0, SSr0, suture_factor, arc_factor, relict_arc_factor,
+            CAL0, N0, OSr0, SSr0, suture_factor, arc_factor, relict_arc_factor, root_depth_factor,
             PALAEOGEOG_TEST, BIO_TEST, DEGASSING_TEST, ARC_TEST, SUTURE_TEST)
 
     #define suture/arc get_masks

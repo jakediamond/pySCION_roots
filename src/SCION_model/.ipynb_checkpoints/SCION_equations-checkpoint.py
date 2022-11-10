@@ -140,7 +140,10 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
 
     f_biot = forcings.f_biot_INTERP(t)
     CB = forcings.CB_INTERP(f_biot)
-
+    
+    #biome forcing
+    biome_forcing = forcings.biome_INTERP(t)
+    
     ######################################################################
     ######################   Sensitivity analysis  ######################
     ######################################################################
@@ -281,7 +284,15 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
 
     relict_arc_enhancement_past = np.copy(INTERPSTACK.relict_arc_enhancement[:,:,key_past_index])
     relict_arc_enhancement_future = np.copy(INTERPSTACK.relict_arc_enhancement[:,:,key_future_index])
+    
+    #root depths
+    root_depths_past = np.copy(INTERPSTACK.root_depths[:,:,key_past_index])
+    root_depths_future = np.copy(INTERPSTACK.root_depths[:,:,key_future_index])
 
+    root_depth_enhancement_past = np.copy(INTERPSTACK.root_enhancement[:,:,key_past_index])
+    root_depth_enhancement_future = np.copy(INTERPSTACK.root_enhancement[:,:,key_future_index])
+    
+    
     #### last keyframe land recorded for plot
     land_past = np.copy(INTERPSTACK.land[:,:,key_past_index])
     land_future = np.copy(INTERPSTACK.land[:,:,key_future_index])
@@ -352,6 +363,11 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
     #this is weathering attributed to relict arcs *only*
     CW_per_km2_past_raw_RAF = CW_per_km2_past_raw * relict_arc_enhancement_past
     CW_per_km2_future_raw_RAF = CW_per_km2_future_raw * relict_arc_enhancement_future
+
+    #this is weathering attributed to roots *only*
+    CW_per_km2_past_raw_ROOTS = CW_per_km2_past_raw * root_depth_enhancement_past
+    CW_per_km2_future_raw_ROOTS = CW_per_km2_future_raw * root_depth_enhancement_future
+
 
     #mutliply our 'base' weathering layer by masks to get only weathering
     #where there's no arcs and Sutures
@@ -466,15 +482,19 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
     Tsurf = GAST + 273
     TEMP_gast = Tsurf
 
+    #root weathering
+    rootw = INTERPSTACK.root_depth/460
     #### COPSE reloaded fbiota
     V = VEG
-    f_biota = (1 - min(V*W, 1)) * PREPLANT * (RCO2**0.5) + (V*W)
+    f_biota = ((1 - min(V*W, 1)) * PREPLANT * (RCO2**0.5) + (V*W)) * rootw
 
     #### version using gran area and conserving total silw
     #basw+ granw should equal total weathering rate, irrispective of basw/granw fractions
 
     basw = silw_spatial * (pars.basfrac * BAS_AREA / (pars.basfrac * BAS_AREA + (1 - pars.basfrac) * GRAN_AREA))
     granw = silw_spatial * ((1 - pars.basfrac) * GRAN_AREA / (pars.basfrac * BAS_AREA + (1 - pars.basfrac) * GRAN_AREA))
+
+
 
     #### add fbiota
     basw = basw * f_biota

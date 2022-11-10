@@ -14,7 +14,7 @@ class Variable_parameters_class(object):
     k_gypdeg, k_capb, k_fepb, k_mopb, k_phosw, k_landfrac, k_nfix, k_denit,
     k_Sr_sedw, k_Sr_mantle, k_Sr_silw, k_Sr_metam, k_oxfrac, newp0, copsek16,
     a, b, kfire, P0, O0, A0, G0, C0, PYR0, GYP0, S0, CAL0, N0, OSr0, SSr0,
-    suture_factor, arc_factor, relict_arc_factor, PALAEOGEOG_TEST,
+    suture_factor, arc_factor, relict_arc_factor, root_factor, PALAEOGEOG_TEST,
     BIO_TEST, DEGASSING_TEST, ARC_TEST, SUTURE_TEST):
         #time
         self.telltime = telltime
@@ -59,6 +59,7 @@ class Variable_parameters_class(object):
         self.P0, self.O0, self.A0, self.G0, self.C0, self.PYR0, self.GYP0 = P0, O0, A0, G0, C0, PYR0, GYP0
         self.S0, self.CAL0, self.N0, self.OSr0, self.SSr0 = S0, CAL0, N0, OSr0, SSr0
         self.suture_factor, self.arc_factor, self.relict_arc_factor = suture_factor, arc_factor, relict_arc_factor
+        self.root_factor = root_factor
         self.PGEOG_test = PALAEOGEOG_TEST
         self.BIO_test = BIO_TEST
         self.SUTURE_test = SUTURE_TEST
@@ -432,12 +433,13 @@ class Run_class_sensanal(object):
 class Interpstack_class(object):
 
     def __init__(self, CO2, time, Tair, runoff, land, lat, lon, topo, aire,
-                 gridarea, suture, arc, relict_arc, slope):
+                 gridarea, suture, arc, relict_arc, slope, root_depths):
 
         self.CO2, self.time, self.Tair, self.runoff, self.land = CO2.astype(float), time, Tair.astype(float), runoff.astype(float), land
         self.lat, self.lon, self.topo, self.aire, self.gridarea = lat, lon, topo.astype(float), aire.astype(float), gridarea
         self.suture, self.arc, self.relict_arc = suture, arc, relict_arc
         self.slope = slope
+        self.root_depths = root_depths
 
     def get_masks(self):
 
@@ -452,6 +454,7 @@ class Interpstack_class(object):
         self.arc_enhancement = ( 1 + self.arc * ( pars.arc_factor - 1 ) ) * self.arc_mask
         self.suture_enhancement = ( 1 + self.suture * ( pars.suture_factor - 1 ) ) * self.suture_mask
         self.relict_arc_enhancement = ( 1 + self.relict_arc * ( pars.relict_arc_factor - 1 ) ) * self.relict_arc_mask
+        self.root_enhancement = ( 1 + self.root_depths * ( pars.root_depth_factor - 1 ) )
 
     def __bool__ (self):
         return bool(self.telltime)
@@ -499,52 +502,10 @@ class Forcings_class(object):
         #self.D_force_COMPLETE_max_SMOOTH = forcing_degassing['degass_COMPLETE_max_SMOOTH_v5'].reshape(len(forcing_degassing['degass_COMPLETE_max_SMOOTH_v5']),) #reshape to (601,)
         #self.D_force_COMPLETE_mean_SMOOTH = forcing_degassing['degass_COMPLETE_mean_SMOOTH_v5'].reshape(len(forcing_degassing['degass_COMPLETE_mean_SMOOTH_v5']),) #reshape to (601,)
         #compiled curve v6, conservative rifts with modifier pre 450 Ma, Fischer diffuse, group min/max for arcs
-class Forcings_class(object):
-
-    def __init__(self, t, B, BA, Ca, CP, D, E, GA, PG, U, W, coal, epsilon,
-                 GR_BA_df, GA_df, forcing_degassing, forcing_shoreline):
-
-        self.t, self.B, self.BA, self.Ca, self.CP, self.D = t, B, BA, Ca, CP, D
-        self.E, self.GA, self.PG, self.U, self.W = E, GA, PG, U, W
-        self.coal, self.epsilon = coal, epsilon
-
-        self.GR_BA = np.asarray([GR_BA_df['t'].to_numpy()*1e6,
-                                 GR_BA_df['BA'].to_numpy()])
-        self.newGA = np.asarray([GA_df['t'].to_numpy()*1e6,
-                                 GA_df['GA'].to_numpy()])
-
-        #lots of degassing, default SCION is D_force_mid/min/max
-        #Merdith curves from sub zones Merdith et al. 2021
-        #Marcilly curves from Marcilly et al. 2021
-        self.D_force_x = forcing_degassing['D_force_x'][0] #time
-        #default SCION
-        #self.D_force_mid = forcing_degassing['D_force_mid'].reshape(len(forcing_degassing['D_force_mid']),) #reshape to (601,)
-        #self.D_force_min = forcing_degassing['D_force_min'].reshape(len(forcing_degassing['D_force_min']),) #reshape to (601,)
-        #self.D_force_max = forcing_degassing['D_force_max'].reshape(len(forcing_degassing['D_force_max']),) #reshape to (601,)
-        #compiled curve v1, no rift modifier pre 450 Ma
-        #self.D_force_COMPLETE_min_SMOOTH = forcing_degassing['degass_COMPLETE_min_SMOOTH_v1'].reshape(len(forcing_degassing['degass_COMPLETE_min_SMOOTH_v1']),) #reshape to (601,)
-        #self.D_force_COMPLETE_max_SMOOTH = forcing_degassing['degass_COMPLETE_max_SMOOTH_v1'].reshape(len(forcing_degassing['degass_COMPLETE_max_SMOOTH_v1']),) #reshape to (601,)
-        #self.D_force_COMPLETE_mean_SMOOTH = forcing_degassing['degass_COMPLETE_mean_SMOOTH_v1'].reshape(len(forcing_degassing['degass_COMPLETE_mean_SMOOTH_v1']),) #reshape to (601,)
-        #compiled curve v2,  conservative rifts, fisher diffuse, cao arcs
-        #self.D_force_COMPLETE_min_SMOOTH = forcing_degassing['degass_COMPLETE_min_SMOOTH_v2'].reshape(len(forcing_degassing['degass_COMPLETE_min_SMOOTH_v2']),) #reshape to (601,)
-        #self.D_force_COMPLETE_max_SMOOTH = forcing_degassing['degass_COMPLETE_max_SMOOTH_v2'].reshape(len(forcing_degassing['degass_COMPLETE_max_SMOOTH_v2']),) #reshape to (601,)
-        #self.D_force_COMPLETE_mean_SMOOTH = forcing_degassing['degass_COMPLETE_mean_SMOOTH_v2'].reshape(len(forcing_degassing['degass_COMPLETE_mean_SMOOTH_v2']),) #reshape to (601,)
-        #compiled curve v3, conservative rifts with modifier pre 450 Ma, Cao et al. arcs min MER21 et al arcs max
-        #self.D_force_COMPLETE_min_SMOOTH = forcing_degassing['degass_COMPLETE_min_SMOOTH_v3'].reshape(len(forcing_degassing['degass_COMPLETE_min_SMOOTH_v3']),) #reshape to (601,)
-        #self.D_force_COMPLETE_max_SMOOTH = forcing_degassing['degass_COMPLETE_max_SMOOTH_v3'].reshape(len(forcing_degassing['degass_COMPLETE_max_SMOOTH_v3']),) #reshape to (601,)
-        #self.D_force_COMPLETE_mean_SMOOTH = forcing_degassing['degass_COMPLETE_mean_SMOOTH_v3'].reshape(len(forcing_degassing['degass_COMPLETE_mean_SMOOTH_v3']),) #reshape to (601,)
-        #compiled curve v4, no rifts, Fischer diffuse, Merdith arcs
-        #self.D_force_COMPLETE_min_SMOOTH = forcing_degassing['degass_COMPLETE_min_SMOOTH_v4'].reshape(len(forcing_degassing['degass_COMPLETE_min_SMOOTH_v4']),) #reshape to (601,)
-        #self.D_force_COMPLETE_max_SMOOTH = forcing_degassing['degass_COMPLETE_max_SMOOTH_v4'].reshape(len(forcing_degassing['degass_COMPLETE_max_SMOOTH_v4']),) #reshape to (601,)
-        #self.D_force_COMPLETE_mean_SMOOTH = forcing_degassing['degass_COMPLETE_mean_SMOOTH_v4'].reshape(len(forcing_degassing['degass_COMPLETE_mean_SMOOTH_v4']),) #reshape to (601,)
-        #compiled curve v5, mean rifts with modifier pre 450 Ma, Fischer diffuse, Merdith arcs
-        #self.D_force_COMPLETE_min_SMOOTH = forcing_degassing['degass_COMPLETE_min_SMOOTH_v5'].reshape(len(forcing_degassing['degass_COMPLETE_min_SMOOTH_v5']),) #reshape to (601,)
-        #self.D_force_COMPLETE_max_SMOOTH = forcing_degassing['degass_COMPLETE_max_SMOOTH_v5'].reshape(len(forcing_degassing['degass_COMPLETE_max_SMOOTH_v5']),) #reshape to (601,)
-        #self.D_force_COMPLETE_mean_SMOOTH = forcing_degassing['degass_COMPLETE_mean_SMOOTH_v5'].reshape(len(forcing_degassing['degass_COMPLETE_mean_SMOOTH_v5']),) #reshape to (601,)
-        #compiled curve v6, conservative rifts with modifier pre 450 Ma, Fischer diffuse, group min/max for arcs
         self.D_force_COMPLETE_min_SMOOTH = forcing_degassing['degass_COMPLETE_min_SMOOTH_v6'].reshape(len(forcing_degassing['degass_COMPLETE_min_SMOOTH_v6']),) #reshape to (601,)
         self.D_force_COMPLETE_max_SMOOTH = forcing_degassing['degass_COMPLETE_max_SMOOTH_v6'].reshape(len(forcing_degassing['degass_COMPLETE_max_SMOOTH_v6']),) #reshape to (601,)
         self.D_force_COMPLETE_mean_SMOOTH = forcing_degassing['degass_COMPLETE_mean_SMOOTH_v6'].reshape(len(forcing_degassing['degass_COMPLETE_mean_SMOOTH_v6']),) #reshape to (601,)
+		
         self.shoreline_time = forcing_shoreline['shoreline_time'][0]
         self.shoreline_relative = forcing_shoreline['shoreline_relative'][0]
 
@@ -562,25 +523,6 @@ class Forcings_class(object):
         self.shoreline_INTERP = interp1d(self.shoreline_time, self.shoreline_relative)
         self.f_biot_INTERP = interp1d([-1000e6, -525e6, -520e6, 0],[0, 0, 1, 1])
         self.CB_INTERP = interp1d([0, 1], [1.2, 1])      
-        self.D_force_COMPLETE_max_SMOOTH = forcing_degassing['degass_COMPLETE_max_SMOOTH_v6'].reshape(len(forcing_degassing['degass_COMPLETE_max_SMOOTH_v6']),) #reshape to (601,)
-        self.D_force_COMPLETE_mean_SMOOTH = forcing_degassing['degass_COMPLETE_mean_SMOOTH_v6'].reshape(len(forcing_degassing['degass_COMPLETE_mean_SMOOTH_v6']),) #reshape to (601,)
-        self.shoreline_time = forcing_shoreline['shoreline_time'][0]
-        self.shoreline_relative = forcing_shoreline['shoreline_relative'][0]
-
-    def get_interp_forcings(self):
-
-        self.E_reloaded_INTERP = interp1d(1e6 * self.t, self.E)
-        self.W_reloaded_INTERP = interp1d(1e6 * self.t, self.W)
-        self.GR_BA_reloaded_INTERP = interp1d(self.GR_BA[0], self.GR_BA[1])
-        self.newGA_reloaded_INTERP = interp1d(self.newGA[0], self.newGA[1])
-        #mid point [solo study] degass curves
-        self.D_complete_SMOOTH_INTERP = interp1d(self.D_force_x, self.D_force_COMPLETE_mean_SMOOTH)
-        self.D_complete_min_SMOOTH_INTERP = interp1d(self.D_force_x, self.D_force_COMPLETE_min_SMOOTH)
-        self.D_complete_max_SMOOTH_INTERP = interp1d(self.D_force_x, self.D_force_COMPLETE_max_SMOOTH)
-
-        self.shoreline_INTERP = interp1d(self.shoreline_time, self.shoreline_relative)
-        self.f_biot_INTERP = interp1d([-1000e6, -525e6, -520e6, 0],[0, 0, 1, 1])
-        self.CB_INTERP = interp1d([0, 1], [1.2, 1])
 
     def __bool__ (self):
         return bool(self.telltime)

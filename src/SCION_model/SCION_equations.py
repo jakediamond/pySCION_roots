@@ -140,7 +140,7 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
 
     f_biot = forcings.f_biot_INTERP(t)
     CB = forcings.CB_INTERP(f_biot)
-
+    
     ######################################################################
     ######################   Sensitivity analysis  ######################
     ######################################################################
@@ -281,7 +281,18 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
 
     relict_arc_enhancement_past = np.copy(INTERPSTACK.relict_arc_enhancement[:,:,key_past_index])
     relict_arc_enhancement_future = np.copy(INTERPSTACK.relict_arc_enhancement[:,:,key_future_index])
+    
+    #root depths
+    ROOT_PRESENCE_past = np.copy(INTERPSTACK.root_presence[:,:,key_past_index])
+    ROOT_PRESENCE_future = np.copy(INTERPSTACK.root_presence[:,:,key_future_index])
 
+    root_presence_mask_past = np.copy(INTERPSTACK.root_presence_mask[:,:,key_past_index])
+    root_presence_mask_future = np.copy(INTERPSTACK.root_presence_mask[:,:,key_future_index])
+
+    root_depth_enhancement_past = np.copy(INTERPSTACK.root_enhancement[:,:,key_past_index])
+    root_depth_enhancement_future = np.copy(INTERPSTACK.root_enhancement[:,:,key_future_index])
+    
+    
     #### last keyframe land recorded for plot
     land_past = np.copy(INTERPSTACK.land[:,:,key_past_index])
     land_future = np.copy(INTERPSTACK.land[:,:,key_future_index])
@@ -353,14 +364,18 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
     CW_per_km2_past_raw_RAF = CW_per_km2_past_raw * relict_arc_enhancement_past
     CW_per_km2_future_raw_RAF = CW_per_km2_future_raw * relict_arc_enhancement_future
 
+    #this is weathering attributed to roots *only*
+    CW_per_km2_past_raw_ROOTS = CW_per_km2_past_raw * root_depth_enhancement_past
+    CW_per_km2_future_raw_ROOTS = CW_per_km2_future_raw * root_depth_enhancement_future
+
     #mutliply our 'base' weathering layer by masks to get only weathering
     #where there's no arcs and Sutures
-    non_arc_suture_weathering_past = CW_per_km2_past_raw * (arc_mask_past != True) * (suture_mask_past != True) * (relict_arc_mask_past != True)
-    non_arc_suture_weathering_future = CW_per_km2_future_raw * (arc_mask_future != True) * (suture_mask_future != True) * (relict_arc_mask_future != True)
+    non_arc_suture_weathering_past = CW_per_km2_past_raw * (arc_mask_past != True) * (suture_mask_past != True) * (relict_arc_mask_past != True) * (root_presence_mask_past != True)
+    non_arc_suture_weathering_future = CW_per_km2_future_raw * (arc_mask_future != True) * (suture_mask_future != True) * (relict_arc_mask_future != True) * (root_presence_mask_future != True)
 
     #now add them together
-    CW_per_km2_past = CW_per_km2_past_raw_SF + CW_per_km2_past_raw_AF + CW_per_km2_past_raw_RAF + non_arc_suture_weathering_past
-    CW_per_km2_future = CW_per_km2_future_raw_SF + CW_per_km2_future_raw_AF + CW_per_km2_future_raw_RAF + non_arc_suture_weathering_future
+    CW_per_km2_past = CW_per_km2_past_raw_SF + CW_per_km2_past_raw_AF + CW_per_km2_past_raw_RAF + CW_per_km2_past_raw_ROOTS + non_arc_suture_weathering_past
+    CW_per_km2_future = CW_per_km2_future_raw_SF + CW_per_km2_future_raw_AF + CW_per_km2_future_raw_RAF + CW_per_km2_future_raw_ROOTS + non_arc_suture_weathering_future
 
     #get present day weathering to calculate silw_scale
     CO2ppm_present_day = 280
@@ -466,15 +481,20 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
     Tsurf = GAST + 273
     TEMP_gast = Tsurf
 
+    #root weathering
+    #rootw = INTERPSTACK.root_depth/460
+    
     #### COPSE reloaded fbiota
     V = VEG
-    f_biota = (1 - min(V*W, 1)) * PREPLANT * (RCO2**0.5) + (V*W)
+    f_biota = ((1 - min(V*W, 1)) * PREPLANT * (RCO2**0.5) + (V*W))
 
     #### version using gran area and conserving total silw
     #basw+ granw should equal total weathering rate, irrispective of basw/granw fractions
 
     basw = silw_spatial * (pars.basfrac * BAS_AREA / (pars.basfrac * BAS_AREA + (1 - pars.basfrac) * GRAN_AREA))
     granw = silw_spatial * ((1 - pars.basfrac) * GRAN_AREA / (pars.basfrac * BAS_AREA + (1 - pars.basfrac) * GRAN_AREA))
+
+
 
     #### add fbiota
     basw = basw * f_biota
@@ -711,6 +731,7 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
                 gridstate.SUTURE[:,:,model_pars.gridstamp_number] = np.copy(SUTURE_past)
                 gridstate.ARC[:,:,model_pars.gridstamp_number] = np.copy(ARC_past)
                 gridstate.RELICT_ARC[:,:,model_pars.gridstamp_number] = np.copy(RELICT_past)
+                gridstate.ROOT_DEPTH[:,:,model_pars.gridstamp_number] = np.copy(ROOT_PRESENCE_past)
                 gridstate.Q[:,:,model_pars.gridstamp_number] = np.copy(Q_past)
                 gridstate.Tair[:,:,model_pars.gridstamp_number] = np.copy(Tair_past)
                 gridstate.TOPO[:,:,model_pars.gridstamp_number] = np.copy(TOPO_past)

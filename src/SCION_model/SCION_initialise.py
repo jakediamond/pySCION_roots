@@ -154,14 +154,13 @@ def SCION_initialise(S):
     #root_times = np.asarray([-600, ,-410, -400, -350, 0])#default
     root_times = np.asarray([-600, -410, -400, -350, 0])
     #460 from Canadell et al. 1996 Oecologia, expressed as a fraction out of 1 (== present day)
-    #NBNB when root depths are 0, we imply in our weathering equation that cells that have a possible
-    #root presence (i.e. our maps) have 0 weathering, because we use them to mask out our 'raw' weathering
-    #need to find a way to separate these
-    #root_depths = np.asarray([0, 0, 10, 100, 460])/460 #default
+    max_root_enhancement_factor = 1.3
+    root_depth_raw = np.asarray([0, 0, 10, 100, 460])
+    root_depths = root_depth_raw*max_root_enhancement_factor/root_depth_raw[-1] #default [0, 0, 10, 100, 460]
     #root_depths = np.asarray([0, 0, 10, 200, 460])/460
-    #root_depths = np.asarray([1, 1, 1, 1, 1])/1
-    root_depths = np.asarray([0, 0, 0, 0, 0])/1
-    print(root_depths)
+    #root_depths = np.asarray([1, 1, 1, 1, 1])*max_root_enhancement_factor/1 
+    #root_depths = np.asarray([0, 0, 0, 0, 0])/1
+    #print(root_depths)
     #root_interp = interp1d(root_times, root_depths)
     root_depth_factor = interp1d(root_times, root_depths)
 

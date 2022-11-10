@@ -365,8 +365,8 @@ def SCION_equations(t,y, pars, forcings, sensanal, INTERPSTACK,
     CW_per_km2_future_raw_RAF = CW_per_km2_future_raw * relict_arc_enhancement_future
 
     #this is weathering attributed to roots *only*
-    CW_per_km2_past_raw_ROOTS = CW_per_km2_past_raw * root_depth_enhancement_past
-    CW_per_km2_future_raw_ROOTS = CW_per_km2_future_raw * root_depth_enhancement_future
+    CW_per_km2_past_raw_ROOTS = CW_per_km2_past_raw * root_presence_mask_past + CW_per_km2_past_raw * root_depth_enhancement_past
+    CW_per_km2_future_raw_ROOTS = CW_per_km2_future_raw * root_presence_mask_future + CW_per_km2_future_raw * root_depth_enhancement_future
 
     #mutliply our 'base' weathering layer by masks to get only weathering
     #where there's no arcs and Sutures

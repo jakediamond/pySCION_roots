@@ -125,8 +125,8 @@ class Variable_parameters_class(object):
         #relict arc weathering only
         CW_per_km2_present_raw_RAF = CW_per_km2_present_raw *( 1 + RELICT_present * ( self.relict_arc_factor - 1 ) ) * relict_mask_present
         #root depth weathering only
-        CW_per_km2_present_raw_ROOTS = CW_per_km2_present_raw *( 1 + ROOT_PRESENCE_present * ( self.root_depth_factor(0) - 1 ) ) * root_presence_mask_present
-        print(np.nansum(CW_per_km2_present_raw_ROOTS), np.nansum(CW_per_km2_present_raw))
+        CW_per_km2_present_raw_ROOTS = CW_per_km2_present_raw * root_presence_mask_present + CW_per_km2_present_raw *( 1 + ROOT_PRESENCE_present * ( self.root_depth_factor(0) - 1 ) ) * root_presence_mask_present
+        
         #non arc and suture weathering only
         #check this, might be underestimating
         non_enhanced_weathering_present = CW_per_km2_present_raw * (arc_mask_present != True) * (suture_mask_present != True) * (relict_mask_present != True) * (root_presence_mask_present != True)
